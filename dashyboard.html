@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BunnyHop - Video Management Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @keyframes hop {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .bunny-hop {
+            animation: hop 2s infinite;
+        }
+        .video-card:hover .video-thumbnail {
+            transform: scale(1.03);
+        }
+        .video-thumbnail {
+            transition: transform 0.3s ease;
+        }
+        .sidebar {
+            transition: all 0.3s ease;
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                position: absolute;
+                z-index: 50;
+                height: 100vh;
+            }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <div class="sidebar bg-purple-900 text-white w-64 flex-shrink-0 md:translate-x-0">
+            <div class="p-4 flex items-center space-x-3">
+                <div class="bunny-hop text-3xl">🐰</div>
+                <h1 class="text-2xl font-bold">BunnyHop</h1>
+            </div>
+            <nav class="mt-8">
+                <div class="px-4 py-2 text-purple-300 uppercase text-xs font-semibold">Navigation</div>
+                <a href="#" class="block px-4 py-3 hover:bg-purple-800 flex items-center space-x-2 bg-purple-800">
+                    <i class="fas fa-play-circle"></i>
+                    <span>Videos</span>
+                </a>
+                <a href="#" class="block px-4 py-3 hover:bg-purple-800 flex items-center space-x-2">
+                    <i class="fas fa-upload"></i>
+                    <span>Upload</span>
+                </a>
+                <a href="#" class="block px-4 py-3 hover:bg-purple-800 flex items-center space-x-2">
+                    <i class="fas fa-folder"></i>
+                    <span>Buckets</span>
+                </a>
+                <a href="#" class="block px-4 py-3 hover:bg-purple-800 flex items-center space-x-2">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Analytics</span>
+                </a>
+                <a href="#" class="block px-4 py-3 hover:bg-purple-800 flex items-center space-x-2">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+            </nav>
+            <div class="absolute bottom-0 w-full p-4 border-t border-purple-800">
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 rounded-full bg-purple-700 flex items-center justify-center">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div>
+                        <div class="font-medium">Bunny Admin</div>
+                        <div class="text-xs text-purple-300">admin@bunnyhop.com</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Mobile header -->
+            <header class="md:hidden bg-purple-900 text-white p-4 flex items-center justify-between">
+                <button id="menu-toggle" class="text-white focus:outline-none">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+                <div class="flex items-center space-x-2">
+                    <div class="bunny-hop">🐰</div>
+                    <h1 class="text-xl font-bold">BunnyHop</h1>
+                </div>
+                <div class="w-8"></div> <!-- Spacer for alignment -->
+            </header>
+
+            <!-- Desktop header -->
+            <header class="hidden md:flex items-center justify-between bg-white border-b border-gray-200 p-4">
+                <h2 class="text-xl font-semibold text-gray-800">Video Management Dashboard</h2>
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <input type="text" placeholder="Search videos..." class="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                    </div>
+                    <button class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2">
+                        <i class="fas fa-plus"></i>
+                        <span>Upload</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Content -->
+            <main class="flex-1 overflow-y-auto p-4 bg-gray-50">
+                <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800">Your Video Library</h3>
+                        <p class="text-gray-600">Manage your AWS S3 video files</p>
+                    </div>
+                    <div class="mt-2 md:mt-0 flex space-x-2">
+                        <select class="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            <option>All Buckets</option>
+                            <option>Bunny-Videos</option>
+                            <option>Carrot-Clips</option>
+                            <option>Hop-Content</option>
+                        </select>
+                        <select class="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            <option>Sort by: Date</option>
+                            <option>Sort by: Name</option>
+                            <option>Sort by: Size</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div class="bg-white p-4 rounded-lg shadow border border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-500">Total Videos</p>
+                                <h4 class="text-2xl font-bold">1,248</h4>
+                            </div>
+                            <div class="p-3 rounded-full bg-purple-100 text-purple-600">
+                                <i class="fas fa-film text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow border border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-500">Storage Used</p>
+                                <h4 class="text-2xl font-bold">245 GB</h4>
+                            </div>
+                            <div class="p-3 rounded-full bg-green-100 text-green-600">
+                                <i class="fas fa-database text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow border border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-500">Recent Uploads</p>
+                                <h4 class="text-2xl font-bold">12</h4>
+                            </div>
+                            <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                                <i class="fas fa-cloud-upload-alt text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Video Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    <!-- Video Card 1 -->
+                    <div class="video-card bg-white rounded-lg overflow-hidden shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-300">
+                        <div class="relative">
+                            <div class="video-thumbnail h-40 bg-gray-200 flex items-center justify-center">
+                                <i class="fas fa-play-circle text-4xl text-purple-600 opacity-70"></i>
+                                <div class="absolute bottom-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">2:45</div>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <h4 class="font-semibold text-gray-800 truncate">Fortnite_2023-11-15.mp4</h4>
+                            <div class="flex justify-between items-center mt-2 text-sm text-gray-500">
+                                <span class="flex items-center">
+                                    <span class="w-2 h-2 rounded-full bg-green-500 mr-1"></span>
+                                    <span>Processed</span>
+                                </span>
+                                <span>2.4 GB</span>
+                            </div>
+                            <div class="flex justify-between items-center mt-3 pt-3 border-t border-gray-100">
+                                <span class="text-xs text-gray-400">Recorded: 2 days ago</span>
+                                <div class="flex space-x-2">
+                                    <button class="text-blue-500 hover:text-blue-700" title="Download">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                    <button class="text-purple-600 hover:text-purple-800" title="More actions">
+                                        <i class="fas fa-ellipsis-h"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Video Card 2 -->
+                    <div class="video-card bg-white rounded-lg overflow-hidden shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-300">
+                        <div class="relative">
+                            <div class="video-thumbnail h-40 bg-gray-200 flex items-center justify-center">
+                                <i class="fas fa-play-circle text-4xl text-purple-600 opacity-70"></i>
+                                <div class="absolute bottom-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">1:22</div>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <h4 class="font-semibold text-gray-800 truncate">Valorant_2023-11-14.mp4</h4>
+                            <div class="flex justify-between items-center mt-2 text-sm text-gray-500">
+                                <span class="flex items-center">
+                                    <span class="w-2 h-2 rounded-full bg-yellow-500 mr-1"></span>
+                                    <span>Processing</span>
+                                </span>
+                                <span>1.8 GB</span>
+                            </div>
+                            <div class="flex justify-between items-center mt-3 pt-3 border-t border-gray-100">
+                                <span class="text-xs text-gray-400">Recorded: 1 week ago</span>
+                                <div class="flex space-x-2">
+                                    <button class="text-blue-500 hover:text-blue-700" title="Download">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                    <button class="text-purple-600 hover:text-purple-800" title="More actions">
+                                        <i class="fas fa-ellipsis-h"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Video Card 3 -->
+                    <div class="video-card bg-white rounded-lg overflow-hidden shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-300">
+                        <div class="relative">
+                            <div class="video-thumbnail h-40 bg-gray-200 flex items-center justify-center">
+                                <i class="fas fa-play-circle text-4xl text-purple-600 opacity-70"></i>
+                                <div class="absolute bottom-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">4:15</div>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <h4 class="font-semibold text-gray-800 truncate">Bunny Hop Dance Challenge.mp4</h4>
+                            <div class="flex justify-between items-center mt-2 text-sm text-gray-500">
+                                <span>4K</span>
+                                <span>120 MB</span>
+                            </div>
+                            <div class="flex justify-between items-center mt-3 pt-3 border-t border-gray-100">
+                                <span class="text-xs text-gray-400">Uploaded: 3 weeks ago</span>
+                                <div class="flex space-x-2">
+                                    <button class="text-purple-600 hover:text-purple-800">
+                                        <i class="fas fa-ellipsis-h"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Video Card 4 -->
+                    <div class="video-card bg-white rounded-lg overflow-hidden shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-300">
+                        <div class="relative">
+                            <div class="video-thumbnail h-40 bg-gray-200 flex items-center justify-center">
+                                <i class="fas fa-play-circle text-4xl text-purple-600 opacity-70"></i>
+                                <div class="absolute bottom-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">0:45</div>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <h4 class="font-semibold text-gray-800 truncate">Quick Bunny Facts.mp4</h4>
+                            <div class="flex justify-between items-center mt-2 text-sm text-gray-500">
+                                <span>480p</span>
+                                <span>15 MB</span>
+                            </div>
+                            <div class="flex justify-between items-center mt-3 pt-3 border-t border-gray-100">
+                                <span class="text-xs text-gray-400">Uploaded: 1 month ago</span>
+                                <div class="flex space-x-2">
+                                    <button class="text-purple-600 hover:text-purple-800">
+                                        <i class="fas fa-ellipsis-h"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Video Card 5 -->
+                    <div class="video-card bg-white rounded-lg overflow-hidden shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-300">
+                        <div class="relative">
+                            <div class="video-thumbnail h-40 bg-gray-200 flex items-center justify-center">
+                                <i class="fas fa-play-circle text-4xl text-purple-600 opacity-70"></i>
+                                <div class="absolute bottom-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">3:30</div>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <h4 class="font-semibold text-gray-800 truncate">Building a Rabbit Hutch.mp4</h4>
+                            <div class="flex justify-between items-center mt-2 text-sm text-gray-500">
+                                <span>1080p</span>
+                                <span>65 MB</span>
+                            </div>
+                            <div class="flex justify-between items-center mt-3 pt-3 border-t border-gray-100">
+                                <span class="text-xs text-gray-400">Uploaded: 2 months ago</span>
+                                <div class="flex space-x-2">
+                                    <button class="text-purple-600 hover:text-purple-800">
+                                        <i class="fas fa-ellipsis-h"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Video Card 6 -->
+                    <div class="video-card bg-white rounded-lg overflow-hidden shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-300">
+                        <div class="relative">
+                            <div class="video-thumbnail h-40 bg-gray-200 flex items-center justify-center">
+                                <i class="fas fa-play-circle text-4xl text-purple-600 opacity-70"></i>
+                                <div class="absolute bottom-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">5:12</div>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <h4 class="font-semibold text-gray-800 truncate">Bunny Grooming Guide.mp4</h4>
+                            <div class="flex justify-between items-center mt-2 text-sm text-gray-500">
+                                <span>720p</span>
+                                <span>42 MB</span>
+                            </div>
+                            <div class="flex justify-between items-center mt-3 pt-3 border-t border-gray-100">
+                                <span class="text-xs text-gray-400">Uploaded: 3 months ago</span>
+                                <div class="flex space-x-2">
+                                    <button class="text-purple-600 hover:text-purple-800">
+                                        <i class="fas fa-ellipsis-h"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Upload Card -->
+                    <div class="bg-white rounded-lg overflow-hidden shadow-md border-2 border-dashed border-gray-300 hover:border-purple-500 transition-colors duration-300 flex flex-col items-center justify-center p-8 text-center cursor-pointer">
+                        <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 mb-4">
+                            <i class="fas fa-cloud-upload-alt text-2xl"></i>
+                        </div>
+                        <h4 class="font-semibold text-gray-800 mb-1">Upload New Video</h4>
+                        <p class="text-sm text-gray-500">Drag & drop or click to browse</p>
+                        <p class="text-xs text-gray-400 mt-2">Supports MP4, MOV, AVI</p>
+                    </div>
+                </div>
+
+                <!-- Pagination -->
+                <div class="mt-8 flex justify-center">
+                    <nav class="flex items-center space-x-2">
+                        <button class="px-3 py-1 rounded border text-gray-600 hover:bg-gray-100">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <button class="px-3 py-1 rounded border bg-purple-600 text-white">1</button>
+                        <button class="px-3 py-1 rounded border text-gray-600 hover:bg-gray-100">2</button>
+                        <button class="px-3 py-1 rounded border text-gray-600 hover:bg-gray-100">3</button>
+                        <span class="px-2 text-gray-500">...</span>
+                        <button class="px-3 py-1 rounded border text-gray-600 hover:bg-gray-100">8</button>
+                        <button class="px-3 py-1 rounded border text-gray-600 hover:bg-gray-100">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </nav>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // Mobile menu toggle
+        document.getElementById('menu-toggle').addEventListener('click', function() {
+            document.querySelector('.sidebar').classList.toggle('open');
+        });
+
+        // Simulate loading videos (in a real app, this would be an API call)
+        document.addEventListener('DOMContentLoaded', function() {
+            // You would typically fetch video data from your backend here
+            console.log('BunnyHop dashboard loaded!');
+            
+            // Example of how you might handle video clicks
+            document.querySelectorAll('.video-card').forEach(card => {
+                card.addEventListener('click', function(e) {
+                    if (!e.target.closest('button')) {
+                        // In a real app, this would open a video detail modal or player
+                        console.log('Video selected:', this.querySelector('h4').textContent);
+                    }
+                });
+            });
+        });
+
+        // Integration with your existing S3 workflow
+        document.getElementById('upload-trigger').addEventListener('click', function() {
+            document.getElementById('file-upload').click();
+        });
+
+        document.getElementById('file-upload').addEventListener('change', function(e) {
+            const files = e.target.files;
+            if (files.length > 0) {
+                // In your implementation, this would:
+                // 1. Upload to user's S3 folder
+                // 2. Trigger modal.com processing task
+                // 3. Update UI with upload progress
+                console.log('Files selected for upload:', files);
+                
+                // Example progress handling
+                const uploadProgress = {
+                    fileName: files[0].name,
+                    progress: 0,
+                    status: 'uploading'
+                };
+                
+                // You would update this with actual upload progress
+                const interval = setInterval(() => {
+                    uploadProgress.progress += 10;
+                    console.log(`Upload progress: ${uploadProgress.progress}%`);
+                    if (uploadProgress.progress >= 100) {
+                        clearInterval(interval);
+                        uploadProgress.status = 'processing';
+                        console.log('Upload complete, triggering processing task');
+                    }
+                }, 500);
+            }
+        });
+
+        // Folder organization example
+        function createFolder(folderName) {
+            // In your implementation, this would create a folder in S3
+            console.log('Creating folder:', folderName);
+            return {
+                name: folderName,
+                path: `user-uploads/${Date.now()}-${folderName}`,
+                createdAt: new Date().toISOString()
+            };
+        }
+
+        // Example of how to integrate with your existing task system
+        function checkProcessingStatus(videoId) {
+            // This would poll your backend for task status
+            return {
+                status: 'completed',
+                highlights: 3,
+                duration: '4:22',
+                processedAt: new Date().toISOString()
+            };
+        }
+    </script>
+</body>
+</html>
